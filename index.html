@@ -427,6 +427,9 @@
                 <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; margin: 5px 0 0 0;">
                     Haz clic en "Buscar Negocios" para encontrar lugares cerca de Houston
                 </p>
+                <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.8rem; margin: 8px 0 0 0; font-style: italic;">
+                    💡 Si no funciona, presiona Cmd+Shift+R (recarga completa)
+                </p>
             </div>
         </div>
 
@@ -1223,6 +1226,7 @@
 
                         // Force update if there's a waiting service worker
                         if (registration.waiting) {
+                            console.log('Skipping waiting service worker...');
                             registration.waiting.postMessage({ action: 'skipWaiting' });
                         }
 
@@ -1232,13 +1236,16 @@
                             if (newWorker) {
                                 newWorker.addEventListener('statechange', () => {
                                     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                        // New service worker available, reload page
-                                        console.log('New service worker available, reloading...');
-                                        window.location.reload();
+                                        console.log('New service worker available, reloading page...');
+                                        // Force hard reload to clear all caches
+                                        window.location.reload(true);
                                     }
                                 });
                             }
                         });
+
+                        // Force update check
+                        registration.update().catch(err => console.log('SW update check failed:', err));
                     })
                     .catch((error) => {
                         console.log('Service Worker registration failed:', error);
