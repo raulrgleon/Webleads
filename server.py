@@ -185,7 +185,9 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 overpass_data = json.loads(response.read().decode('utf-8'))
 
             businesses = []
-            for element in overpass_data.get('elements', [])[:50]:  # Limitar a 50 resultados
+            elements = overpass_data.get('elements', [])[:50]  # Limitar a 50 resultados
+
+            for element in elements:
                 # Calcular distancia
                 if 'lat' in element and 'lon' in element:
                     element_lat = element['lat']
@@ -200,30 +202,31 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 tags = element.get('tags', {})
                 name = tags.get('name', f"{term.title()} sin nombre")
 
-                businesses.append({
-                    'id': f"osm_{element['id']}",
-                    'name': name,
-                    'category': tags.get('amenity', term).replace('_', ' ').title(),
-                    'address': tags.get('addr:full', tags.get('addr:housenumber', '') + ' ' + tags.get('addr:street', '')),
-                    'city': tags.get('addr:city', ''),
-                    'state': tags.get('addr:state', ''),
-                    'phone': tags.get('phone', ''),
-                    'website': tags.get('website', ''),
-                    'hasWebsite': bool(tags.get('website')),
-                    'rating': 0,  # OSM no tiene ratings
-                    'reviewCount': 0,  # OSM no tiene reviews
-                    'price': '',  # OSM no tiene precios
-                    'isClosed': False,  # OSM no tiene estado abierto/cerrado
-                    'distance': distance,
-                    'imageUrl': '',
-                    'osmUrl': f"https://www.openstreetmap.org/{element['type']}/{element['id']}",
-                    'coordinates': {
-                        'latitude': element_lat,
-                        'longitude': element_lon
-                    },
-                    'email': tags.get('email', ''),
-                    'openingHours': tags.get('opening_hours', '')
-                })
+                if distance <= radius:
+                    businesses.append({
+                        'id': f"osm_{element['id']}",
+                        'name': name,
+                        'category': tags.get('amenity', term).replace('_', ' ').title(),
+                        'address': tags.get('addr:full', tags.get('addr:housenumber', '') + ' ' + tags.get('addr:street', '')),
+                        'city': tags.get('addr:city', ''),
+                        'state': tags.get('addr:state', ''),
+                        'phone': tags.get('phone', ''),
+                        'website': tags.get('website', ''),
+                        'hasWebsite': bool(tags.get('website')),
+                        'rating': 0,  # OSM no tiene ratings
+                        'reviewCount': 0,  # OSM no tiene reviews
+                        'price': '',  # OSM no tiene precios
+                        'isClosed': False,  # OSM no tiene estado abierto/cerrado
+                        'distance': distance,
+                        'imageUrl': '',
+                        'osmUrl': f"https://www.openstreetmap.org/{element['type']}/{element['id']}",
+                        'coordinates': {
+                            'latitude': element_lat,
+                            'longitude': element_lon
+                        },
+                        'email': tags.get('email', ''),
+                        'openingHours': tags.get('opening_hours', '')
+                    })
 
             # Ordenar por distancia
             businesses.sort(key=lambda x: x['distance'])
