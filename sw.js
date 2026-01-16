@@ -1,5 +1,5 @@
 // Service Worker para Webleads PWA
-const CACHE_NAME = 'webleads-v7';
+const CACHE_NAME = 'webleads-v8';
 const API_CACHE_NAME = 'webleads-api-v1';
 
 // Archivos para cache
@@ -116,8 +116,8 @@ async function networkFirst(request) {
   }
 }
 
-// Función para buscar negocios en Yelp
-async function searchYelpBusinesses(term, location, radius) {
+// Función para buscar negocios usando OpenStreetMap
+async function searchBusinessesAPI(term, location, radius) {
   try {
     const url = new URL(`${self.location.origin}/api/search`);
     url.searchParams.append('term', term);
@@ -145,7 +145,7 @@ self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SEARCH_YELP') {
     const { term, location, radius } = event.data;
 
-    searchYelpBusinesses(term, location, radius)
+    searchBusinessesAPI(term, location, radius)
       .then(businesses => {
         event.ports[0].postMessage({
           type: 'YELP_RESULTS',

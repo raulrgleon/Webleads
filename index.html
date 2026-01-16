@@ -6,7 +6,7 @@
     <title>Webleads - Motor de Búsqueda Inteligente</title>
     
     <!-- PWA Meta Tags -->
-    <meta name="description" content="Motor de búsqueda inteligente para negocios locales con datos reales de Yelp">
+    <meta name="description" content="Motor de búsqueda inteligente para negocios locales con datos gratuitos de OpenStreetMap">
     <meta name="theme-color" content="#667eea">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -624,7 +624,7 @@
             }
         });
 
-        // Search businesses using real Yelp API
+        // Search businesses using OpenStreetMap data
         async function searchBusinesses() {
             const location = document.getElementById('location').value;
             const businessType = document.getElementById('businessType').value;
@@ -650,8 +650,8 @@
             document.getElementById('resultsSection').style.display = 'none';
             
             try {
-                // Always use real Yelp API
-                const realBusinesses = await searchYelpAPI(term, location, parseInt(radius));
+                // Always use OpenStreetMap data
+                const realBusinesses = await searchBusinessesAPI(term, location, parseInt(radius));
 
                 if (realBusinesses && realBusinesses.length > 0) {
                     savedBusinesses = [...savedBusinesses, ...realBusinesses];
@@ -665,22 +665,19 @@
                 console.error('API Error:', error);
 
                 let errorMessage = '❌ Error al buscar negocios:\n\n';
-                if (error.message.includes('401')) {
-                    errorMessage += '• API Key de Yelp inválida o expirada\n';
-                    errorMessage += '• Verifica que YELP_API_KEY esté configurada correctamente\n';
-                } else if (error.message.includes('429')) {
-                    errorMessage += '• Límite de solicitudes de Yelp excedido\n';
-                    errorMessage += '• Espera unos minutos antes de intentar nuevamente\n';
-                } else if (error.message.includes('500')) {
-                    errorMessage += '• Error interno del servidor de Yelp\n';
-                    errorMessage += '• Intenta nuevamente en unos minutos\n';
+                if (error.message.includes('404')) {
+                    errorMessage += '• No se encontraron negocios en esa área\n';
+                    errorMessage += '• Prueba con una ubicación diferente o aumenta el radio de búsqueda\n';
                 } else if (error.message.includes('Service Worker not available')) {
                     errorMessage += '• Service Worker no disponible\n';
                     errorMessage += '• Recarga la página e intenta nuevamente\n';
+                } else if (error.message.includes('No se pudo')) {
+                    errorMessage += '• Problema de conexión con OpenStreetMap\n';
+                    errorMessage += '• Verifica tu conexión a internet e intenta nuevamente\n';
                 } else {
                     errorMessage += `• ${error.message}\n`;
                 }
-                errorMessage += '\n💡 Esta aplicación usa datos reales de Yelp. Asegúrate de tener una API key válida.';
+                errorMessage += '\n💡 Esta aplicación usa datos gratuitos de OpenStreetMap. No requiere API key.';
                 alert(errorMessage);
             } finally {
                 document.getElementById('loading').style.display = 'none';
@@ -688,7 +685,7 @@
         }
 
         // Search using backend proxy
-        async function searchYelpAPI(term, location, radius) {
+        async function searchBusinessesAPI(term, location, radius) {
             const url = new URL(`${APP_CONFIG.API_BASE}/search`, window.location.origin);
             url.searchParams.set('term', term);
             url.searchParams.set('location', location);
@@ -718,7 +715,7 @@
                 isClosed: business.is_closed || false,
                 distance: business.distance ? business.distance / 1000 : 0, // Convert to km
                 imageUrl: business.image_url || '',
-                yelpUrl: business.url || '',
+                    osmUrl: business.osmUrl || '',
                 coordinates: {
                     latitude: business.coordinates?.latitude,
                     longitude: business.coordinates?.longitude
@@ -968,7 +965,7 @@
                     isClosed: Math.random() > 0.95,
                     distance: Math.random() * (radius / 1000), // Distance in km within the radius
                     imageUrl: `https://picsum.photos/200/200?random=${Date.now() + i}`,
-                    yelpUrl: `https://yelp.com/biz/${businessName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+                    osmUrl: `https://www.openstreetmap.org/search?query=${encodeURIComponent(businessName + ' ' + city)}`,
                     coordinates: {
                         latitude: currentLocation[0] + (Math.random() - 0.5) * 0.01,
                         longitude: currentLocation[1] + (Math.random() - 0.5) * 0.01
