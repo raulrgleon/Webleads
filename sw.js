@@ -52,7 +52,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  if (requestUrl.origin === self.location.origin && requestUrl.pathname.startsWith('/api/yelp/')) {
+  if (requestUrl.origin === self.location.origin && requestUrl.pathname.startsWith('/api/')) {
     event.respondWith(networkFirst(event.request));
     return;
   }
@@ -119,12 +119,12 @@ async function networkFirst(request) {
 // Función para buscar negocios en Yelp
 async function searchYelpBusinesses(term, location, radius) {
   try {
-    const url = new URL(`${self.location.origin}/api/yelp/search`);
+    const url = new URL(`${self.location.origin}/api/search`);
     url.searchParams.append('term', term);
     url.searchParams.append('location', location);
     url.searchParams.append('radius', radius);
 
-    console.log('Searching Yelp via proxy:', url.toString());
+    console.log('Searching businesses via proxy:', url.toString());
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -135,7 +135,7 @@ async function searchYelpBusinesses(term, location, radius) {
     const data = await response.json();
     return data.businesses || [];
   } catch (error) {
-    console.error('Error searching Yelp:', error);
+    console.error('Error searching businesses:', error);
     throw error;
   }
 }

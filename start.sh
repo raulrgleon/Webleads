@@ -10,11 +10,9 @@ if ! command -v python3 &> /dev/null; then
     exit 1
 fi
 
-# Verificar API key de Yelp
-if [ -z "$YELP_API_KEY" ]; then
-    echo "⚠️  YELP_API_KEY no está configurada"
-    echo "💡 Ejecuta: export YELP_API_KEY=\"TU_API_KEY\""
-fi
+# Verificar que todo esté listo
+echo "✅ Usando datos gratuitos de OpenStreetMap"
+echo "💡 No se requiere configuración adicional"
 
 # Verificar si el puerto está en uso
 if lsof -Pi :8001 -sTCP:LISTEN -t >/dev/null ; then

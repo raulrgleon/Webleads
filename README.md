@@ -3,10 +3,10 @@
 [![GitHub](https://img.shields.io/badge/GitHub-raulrgleon/Webleads-blue?logo=github)](https://github.com/raulrgleon/Webleads)
 
 ## 📋 Descripción
-Aplicación web progresiva (PWA) para buscar negocios locales usando **exclusivamente datos reales de la API de Yelp**. Incluye mapa interactivo, exportación a CSV para EspoCRM y funcionalidad offline.
+Aplicación web progresiva (PWA) para buscar negocios locales usando **datos de OpenStreetMap (gratuitos y sin API key)**. Incluye mapa interactivo, exportación a CSV para EspoCRM y funcionalidad offline.
 
 ## 🎯 Características
-- ✅ **Datos 100% Reales** - Exclusivamente de la API de Yelp
+- ✅ **Datos Gratuitos** - OpenStreetMap (sin API key requerida)
 - ✅ **PWA Instalable** - Funciona como app nativa
 - ✅ **Mapa Interactivo** - Leaflet con marcadores
 - ✅ **Exportación EspoCRM** - CSV optimizado
@@ -21,10 +21,8 @@ git clone https://github.com/raulrgleon/Webleads.git
 cd Webleads
 ```
 
-### 0.1 Configurar API Key de Yelp (obligatorio)
-```bash
-export YELP_API_KEY="TU_API_KEY"
-```
+### 0.1 ¡Sin configuración adicional!
+No se requiere API key. Los datos provienen de OpenStreetMap (gratuito).
 
 ### Opción 1: Script Automático (Recomendado)
 ```bash
@@ -84,9 +82,9 @@ webleads-html/
 ## ⚠️ Notas Importantes
 - **NO abras index.html directamente** - Usa el servidor
 - **Service Worker requiere HTTPS** en producción
-- **API de Yelp** tiene límites de uso (500 requests/día)
-- **Requiere API Key válida** - Configura YELP_API_KEY antes de usar
-- **Datos 100% reales** - No hay datos simulados disponibles
+- **Datos de OpenStreetMap** - Gratuitos y sin límites de uso
+- **Sin API key requerida** - Funciona inmediatamente
+- **Cobertura global** - Disponible en todo el mundo
 - **API Key** se configura en el servidor (variable `YELP_API_KEY`)
 
 ## 🐛 Solución de Problemas
