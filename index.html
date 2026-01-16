@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="es" data-version="20260116-001">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webleads - Motor de Búsqueda Inteligente</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Motor de búsqueda inteligente para negocios locales con datos reales de Yelp">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Webleads">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- PWA Icons -->
+    <link rel="icon" type="image/png" sizes="96x96" href="icons/icon-96x96.png">
+    <link rel="icon" type="image/png" sizes="72x72" href="icons/icon-72x72.png">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="config.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .logo {
+            font-size: 4rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+        
+        .subtitle {
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 40px;
+        }
+        
+        .search-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .search-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .search-form {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+        }
+        
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .map-container {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 420px;
+            height: 420px;
+        }
+        
+        #map {
+            width: 100%;
+            flex: 1;
+            min-height: 300px;
+            height: 100%;
+            border-radius: 10px;
+        }
+        
+        .search-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        .results-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: none;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .export-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .export-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        }
+        
+        .business-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .business-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .business-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        
+        .business-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .business-category {
+            color: #a78bfa;
+            font-size: 0.9rem;
+        }
+        
+        .business-rating {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 10px;
+            border-radius: 10px;
+        }
+        
+        .business-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .business-detail {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .stats {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .search-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .business-details {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Custom marker styles */
+        .custom-marker {
+            background: transparent !important;
+            border: none !important;
+        }
+        
+        .custom-marker div {
+            cursor: grab;
+            transition: all 0.3s ease;
+        }
+        
+        .custom-marker div:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.6) !important;
+        }
+        
+        .custom-marker div:active {
+            cursor: grabbing;
+        }
+        
+        /* Map container improvements */
+        .map-container {
+            position: relative;
+        }
+        
+        .map-container::before {
+            content: "💡 Haz clic en el mapa o arrastra el punto azul para cambiar la ubicación";
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1 class="logo">Webleads</h1>
+            <p class="subtitle">Motor de Búsqueda Inteligente para Negocios Locales</p>
+        </div>
+
+        <!-- Search Section -->
+        <div class="search-section">
+            <div class="search-grid">
+                <div class="search-form">
+                    <h3 style="margin-bottom: 20px; color: #667eea;">🔍 Filtros de Búsqueda</h3>
+                    
+                    <div class="form-group">
+                        <label>📍 Ubicación</label>
+                        <input type="text" id="location" value="Houston, TX" placeholder="Ciudad, Estado">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>🏢 Tipo de Negocio</label>
+                        <select id="businessType">
+                            <option value="restaurants">🍽️ Restaurantes</option>
+                            <option value="shopping">🛍️ Compras</option>
+                            <option value="homeservices">🏠 Servicios para el Hogar</option>
+                            <option value="auto">🚗 Automotriz</option>
+                            <option value="beautysvc">💄 Servicios de Belleza</option>
+                            <option value="health">🏥 Salud</option>
+                            <option value="education">📚 Educación</option>
+                            <option value="financialservices">💰 Servicios Financieros</option>
+                            <option value="realestate">🏘️ Bienes Raíces</option>
+                            <option value="pets">🐕 Mascotas</option>
+                            <option value="fitness">💪 Gimnasios y Fitness</option>
+                            <option value="entertainment">🎬 Entretenimiento</option>
+                            <option value="professional">💼 Servicios Profesionales</option>
+                            <option value="retail">🏪 Retail y Tiendas</option>
+                            <option value="food">🍕 Comida y Bebidas</option>
+                            <option value="travel">✈️ Viajes y Turismo</option>
+                            <option value="technology">💻 Tecnología</option>
+                            <option value="construction">🔨 Construcción</option>
+                            <option value="agriculture">🌾 Agricultura</option>
+                            <option value="manufacturing">🏭 Manufactura</option>
+                            <option value="transportation">🚚 Transporte</option>
+                            <option value="utilities">⚡ Servicios Públicos</option>
+                            <option value="legal">⚖️ Servicios Legales</option>
+                            <option value="marketing">📢 Marketing y Publicidad</option>
+                            <option value="consulting">🎯 Consultoría</option>
+                            <option value="security">🛡️ Seguridad</option>
+                            <option value="cleaning">🧹 Limpieza</option>
+                            <option value="maintenance">🔧 Mantenimiento</option>
+                            <option value="repair">🔨 Reparaciones</option>
+                            <option value="installation">⚙️ Instalaciones</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>✨ Tipo Personalizado</label>
+                        <input type="text" id="customType" placeholder="Escribe tu tipo de negocio">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>📏 Radio: <span id="radiusValue">5000m</span></label>
+                        <input type="range" id="radius" min="1000" max="40000" step="1000" value="5000">
+                    </div>
+
+                </div>
+                
+                <div class="map-container">
+                    <h3 style="margin-bottom: 15px; color: #667eea;">🗺️ Mapa Interactivo</h3>
+                    <div id="map"></div>
+                </div>
+            </div>
+            
+            <button class="search-btn" onclick="searchBusinesses()">
+                🚀 Buscar Negocios
+            </button>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Buscando negocios...</p>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <div class="results-header">
+                <h3>📊 Resultados de Búsqueda</h3>
+                <button class="export-btn" onclick="exportToCSV()">📥 Exportar para EspoCRM</button>
+            </div>
+            <div id="resultsContainer"></div>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="stats">
+            <h3 style="margin-bottom: 20px; color: #667eea;">📈 Estadísticas</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalBusinesses">0</div>
+                    <div class="stat-label">Negocios Encontrados</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="withWebsite">0</div>
+                    <div class="stat-label">Con Sitio Web</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="withoutWebsite">0</div>
+                    <div class="stat-label">Sin Sitio Web</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="avgRating">0.0</div>
+                    <div class="stat-label">Rating Promedio</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        const APP_CONFIG = window.CONFIG || {
+            API_BASE: '/api/yelp',
+            DEFAULT_LOCATION: 'Houston, TX',
+            DEFAULT_RADIUS: 5000,
+            USE_MOCK_FALLBACK: false,
+            DEBUG_MODE: false
+        };
+        let map;
+        let searchCircle;
+        let centerMarker;
+        let currentLocation = [29.7604, -95.3698]; // Houston, TX
+        let savedBusinesses = [];
+        let isDragging = false;
+
+        // Initialize map
+        function initMap() {
+            const mapElement = document.getElementById('map');
+            if (!mapElement) {
+                console.error('Map element not found');
+                return;
+            }
+            
+            try {
+                map = L.map('map', {
+                    center: currentLocation,
+                    zoom: 12,
+                    zoomControl: true,
+                    attributionControl: false
+                });
+            } catch (error) {
+                console.error('Error initializing map:', error);
+                return;
+            }
+            
+            // Use OpenStreetMap as primary tile provider (more reliable)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                subdomains: 'abc',
+                maxZoom: 19
+            }).addTo(map);
+            
+            // Add center marker
+            centerMarker = L.marker(currentLocation, {
+                draggable: true,
+                icon: L.divIcon({
+                    className: 'custom-marker',
+                    html: '<div style="background: #667eea; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 10px rgba(0,0,0,0.3);"></div>',
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10]
+                })
+            }).addTo(map);
+            
+            // Handle marker drag
+            centerMarker.on('dragstart', function() {
+                isDragging = true;
+            });
+            
+            centerMarker.on('drag', function(e) {
+                currentLocation = [e.target.getLatLng().lat, e.target.getLatLng().lng];
+                updateSearchCircle();
+            });
+            
+            centerMarker.on('dragend', function(e) {
+                isDragging = false;
+                currentLocation = [e.target.getLatLng().lat, e.target.getLatLng().lng];
+                updateSearchCircle();
+                // Update location input with reverse geocoding
+                reverseGeocode(currentLocation);
+            });
+            
+            // Handle map clicks
+            map.on('click', function(e) {
+                if (!isDragging) {
+                    currentLocation = [e.latlng.lat, e.latlng.lng];
+                    centerMarker.setLatLng(currentLocation);
+                    map.setView(currentLocation, map.getZoom()); // Keep current zoom
+                    updateSearchCircle();
+                    reverseGeocode(currentLocation);
+                }
+            });
+            
+            updateSearchCircle();
+            
+            // Ensure map renders correctly after layout
+            setTimeout(() => {
+                if (map) {
+                    map.invalidateSize();
+                }
+            }, 100);
+        }
+
+        // Update search circle
+        function updateSearchCircle() {
+            if (searchCircle) {
+                map.removeLayer(searchCircle);
+            }
+            
+            const radius = parseInt(document.getElementById('radius').value);
+            searchCircle = L.circle(currentLocation, {
+                color: '#667eea',
+                fillColor: '#667eea',
+                fillOpacity: 0.2,
+                radius: radius,
+                weight: 2
+            }).addTo(map);
+        }
+
+        // Reverse geocoding
+        async function reverseGeocode(latLng) {
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latLng[0]}&lon=${latLng[1]}&zoom=18&addressdetails=1`);
+                const data = await response.json();
+                
+                if (data && data.display_name) {
+                    const parts = data.display_name.split(', ');
+                    const city = parts[0] || 'Ciudad';
+                    const state = parts[1] || 'Estado';
+                    document.getElementById('location').value = `${city}, ${state}`;
+                }
+            } catch (error) {
+                console.error('Reverse geocoding error:', error);
+            }
+        }
+
+        // Geocode location
+        async function geocodeLocation(location) {
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}&limit=1`);
+                const data = await response.json();
+                
+                if (data && data.length > 0) {
+                    const lat = parseFloat(data[0].lat);
+                    const lon = parseFloat(data[0].lon);
+                    currentLocation = [lat, lon];
+                    
+                    map.setView(currentLocation, 12);
+                    centerMarker.setLatLng(currentLocation);
+                    updateSearchCircle();
+                    
+                    return { lat, lon };
+                }
+            } catch (error) {
+                console.error('Geocoding error:', error);
+            }
+            return null;
+        }
+
+        // Update radius display
+        document.getElementById('radius').addEventListener('input', function() {
+            const value = this.value;
+            document.getElementById('radiusValue').textContent = value + 'm';
+            updateSearchCircle();
+        });
+
+        // Update location and map
+        document.getElementById('location').addEventListener('input', function() {
+            const location = this.value;
+            if (location.length > 3) {
+                geocodeLocation(location);
+            }
+        });
+
+        // Search businesses using real Yelp API
+        async function searchBusinesses() {
+            const location = document.getElementById('location').value;
+            const businessType = document.getElementById('businessType').value;
+            const customType = document.getElementById('customType').value;
+            const radius = document.getElementById('radius').value;
+            
+            // Validate inputs
+            if (!location || location.trim() === '') {
+                alert('Por favor ingresa una ubicación');
+                return;
+            }
+            
+            if (!businessType && (!customType || customType.trim() === '')) {
+                alert('Por favor selecciona un tipo de negocio o escribe uno personalizado');
+                return;
+            }
+            
+            // Use custom type if provided, otherwise use business type
+            const term = customType.trim() || businessType;
+            
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'none';
+            
+            try {
+                // Always use real Yelp API
+                const realBusinesses = await searchYelpAPI(term, location, parseInt(radius));
+
+                if (realBusinesses && realBusinesses.length > 0) {
+                    savedBusinesses = [...savedBusinesses, ...realBusinesses];
+                    localStorage.setItem('savedBusinesses', JSON.stringify(savedBusinesses));
+                    displayResults(realBusinesses);
+                    updateStats();
+                } else {
+                    alert('No se encontraron negocios con esos criterios. Prueba otra ubicación o aumenta el radio.');
+                }
+            } catch (error) {
+                console.error('API Error:', error);
+
+                let errorMessage = '❌ Error al buscar negocios:\n\n';
+                if (error.message.includes('401')) {
+                    errorMessage += '• API Key de Yelp inválida o expirada\n';
+                    errorMessage += '• Verifica que YELP_API_KEY esté configurada correctamente\n';
+                } else if (error.message.includes('429')) {
+                    errorMessage += '• Límite de solicitudes de Yelp excedido\n';
+                    errorMessage += '• Espera unos minutos antes de intentar nuevamente\n';
+                } else if (error.message.includes('500')) {
+                    errorMessage += '• Error interno del servidor de Yelp\n';
+                    errorMessage += '• Intenta nuevamente en unos minutos\n';
+                } else if (error.message.includes('Service Worker not available')) {
+                    errorMessage += '• Service Worker no disponible\n';
+                    errorMessage += '• Recarga la página e intenta nuevamente\n';
+                } else {
+                    errorMessage += `• ${error.message}\n`;
+                }
+                errorMessage += '\n💡 Esta aplicación usa datos reales de Yelp. Asegúrate de tener una API key válida.';
+                alert(errorMessage);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // Search using backend proxy
+        async function searchYelpAPI(term, location, radius) {
+            const url = new URL(`${APP_CONFIG.API_BASE}/search`, window.location.origin);
+            url.searchParams.set('term', term);
+            url.searchParams.set('location', location);
+            url.searchParams.set('radius', String(radius));
+
+            const response = await fetch(url.toString());
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                const errorMessage = data.error || `Error ${response.status}`;
+                throw new Error(errorMessage);
+            }
+
+            const businesses = (data.businesses || []).map(business => ({
+                id: business.id,
+                name: business.name,
+                category: business.categories ? business.categories[0].title : term,
+                address: business.location?.address1 || '',
+                city: business.location?.city || '',
+                state: business.location?.state || '',
+                phone: business.phone || '',
+                website: business.url || '',
+                hasWebsite: !!business.url,
+                rating: business.rating || 0,
+                reviewCount: business.review_count || 0,
+                price: business.price || '',
+                isClosed: business.is_closed || false,
+                distance: business.distance ? business.distance / 1000 : 0, // Convert to km
+                imageUrl: business.image_url || '',
+                yelpUrl: business.url || '',
+                coordinates: {
+                    latitude: business.coordinates?.latitude,
+                    longitude: business.coordinates?.longitude
+                }
+            }));
+
+            return businesses;
+        }
+
+        // Generate mock business data with realistic names
+        function generateMockBusinesses(term, location, radius) {
+            // Validate inputs
+            if (!term || !location || !radius) {
+                console.error('Invalid parameters:', { term, location, radius });
+                return [];
+            }
+            
+            const businessNames = {
+                'restaurants': [
+                    'El Rincón Mexicano', 'Bella Vista Restaurant', 'Golden Dragon', 'Tony\'s Pizza', 'Café Central',
+                    'La Parrilla Grill', 'Sushi Master', 'Burger Palace', 'Taco Fiesta', 'Mediterranean Bistro',
+                    'Steakhouse Prime', 'Noodle House', 'Seafood Shack', 'BBQ King', 'Italian Garden',
+                    'Thai Spice', 'French Bistro', 'Indian Palace', 'Korean BBQ', 'Greek Taverna'
+                ],
+                'shopping': [
+                    'Fashion Forward', 'Tech World', 'Home Decor Plus', 'Sports Zone', 'Beauty Boutique',
+                    'Electronics Hub', 'Furniture Gallery', 'Jewelry Store', 'Book Nook', 'Gift Shop',
+                    'Shoe Palace', 'Clothing Co', 'Garden Center', 'Pet Supplies', 'Art Gallery',
+                    'Music Store', 'Toy World', 'Antique Shop', 'Craft Store', 'Department Store'
+                ],
+                'homeservices': [
+                    'Pro Plumbing', 'Electric Solutions', 'Clean & Shine', 'Green Thumb Landscaping', 'Perfect Paint',
+                    'HVAC Experts', 'Roof Masters', 'Floor Specialists', 'Window World', 'Handyman Plus',
+                    'Pool Services', 'Security Systems', 'Appliance Repair', 'Carpet Cleaners', 'Pest Control',
+                    'Moving Company', 'Storage Solutions', 'Home Inspections', 'Renovation Pros', 'Maintenance Co'
+                ],
+                'auto': [
+                    'Auto Care Center', 'Quick Lube', 'Tire World', 'Brake Masters', 'Transmission Pro',
+                    'Body Shop Plus', 'Car Wash Express', 'Auto Parts Store', 'Gas Station', 'Car Dealership',
+                    'Mechanic Shop', 'Auto Glass', 'Detailing Service', 'Towing Company', 'Auto Insurance',
+                    'Car Rental', 'Motorcycle Shop', 'Truck Service', 'Auto Electric', 'Radiator Shop'
+                ],
+                'beautysvc': [
+                    'Hair Studio', 'Nail Salon', 'Spa Retreat', 'Barber Shop', 'Beauty Bar',
+                    'Skin Care Center', 'Massage Therapy', 'Hair Salon', 'Nail Art Studio', 'Wellness Spa',
+                    'Beauty Lounge', 'Hair Design', 'Nail Spa', 'Facial Studio', 'Hair Cuts',
+                    'Beauty Clinic', 'Hair Studio', 'Nail Boutique', 'Spa Center', 'Beauty House'
+                ],
+                'health': [
+                    'Family Clinic', 'Dental Care', 'Physical Therapy', 'Mental Health Center', 'Urgent Care',
+                    'Pediatric Clinic', 'Women\'s Health', 'Cardiology Center', 'Orthopedic Clinic', 'Dermatology',
+                    'Eye Care Center', 'Chiropractic', 'Podiatry Clinic', 'Allergy Center', 'Sleep Clinic',
+                    'Pain Management', 'Rehabilitation Center', 'Wellness Center', 'Medical Center', 'Health Clinic'
+                ],
+                'education': [
+                    'Learning Academy', 'Tutoring Center', 'Language School', 'Music Academy', 'Art Studio',
+                    'Dance School', 'Swimming Lessons', 'Math Tutoring', 'Science Center', 'Computer Training',
+                    'Preschool', 'After School Program', 'Summer Camp', 'Adult Education', 'Test Prep',
+                    'Coding Bootcamp', 'Driving School', 'Cooking Classes', 'Photography School', 'Fitness Training'
+                ],
+                'financialservices': [
+                    'First National Bank', 'Investment Advisors', 'Insurance Agency', 'Tax Services', 'Credit Union',
+                    'Financial Planning', 'Loan Services', 'Accounting Firm', 'Wealth Management', 'Mortgage Brokers',
+                    'Business Banking', 'Personal Finance', 'Retirement Planning', 'Estate Planning', 'Credit Repair',
+                    'Payday Loans', 'Financial Consulting', 'Insurance Brokers', 'Tax Preparation', 'Financial Services'
+                ],
+                'realestate': [
+                    'Premier Realty', 'Home Finders', 'Property Management', 'Real Estate Group', 'Housing Solutions',
+                    'Dream Homes', 'Property Partners', 'Real Estate Pro', 'Home Buyers', 'Property Sales',
+                    'Real Estate Team', 'Home Sellers', 'Property Investment', 'Real Estate Co', 'Housing Market',
+                    'Property Experts', 'Home Solutions', 'Real Estate Plus', 'Property Specialists', 'Home Partners'
+                ],
+                'pets': [
+                    'Pet Care Center', 'Veterinary Clinic', 'Pet Grooming', 'Pet Store', 'Animal Hospital',
+                    'Pet Training', 'Pet Boarding', 'Pet Supplies', 'Pet Adoption', 'Pet Services',
+                    'Animal Care', 'Pet Wellness', 'Pet Health', 'Pet Paradise', 'Pet Haven',
+                    'Animal Clinic', 'Pet Care Plus', 'Pet Solutions', 'Animal Services', 'Pet World'
+                ],
+                'fitness': [
+                    'FitZone Gym', 'Power Fitness', 'Elite Training', 'CrossFit Central', 'Body Building Plus',
+                    'Fitness First', 'Gym Pro', 'Strength Center', 'Cardio Zone', 'Muscle Factory',
+                    'Fit Life', 'Training Ground', 'Fitness Hub', 'Workout World', 'Health Club',
+                    'Sports Center', 'Athletic Club', 'Fitness Studio', 'Gym Express', 'Fit Center'
+                ],
+                'entertainment': [
+                    'Cinema Palace', 'Entertainment Center', 'Fun Zone', 'Game Arcade', 'Bowling Alley',
+                    'Karaoke Bar', 'Dance Club', 'Concert Hall', 'Theater Group', 'Event Center',
+                    'Party Place', 'Recreation Center', 'Fun House', 'Entertainment Hub', 'Leisure Center',
+                    'Amusement Park', 'Entertainment World', 'Fun Factory', 'Play Zone', 'Entertainment Plus'
+                ],
+                'professional': [
+                    'Professional Services', 'Business Solutions', 'Corporate Center', 'Executive Services', 'Management Group',
+                    'Professional Team', 'Business Hub', 'Corporate Solutions', 'Executive Center', 'Professional Group',
+                    'Business Center', 'Corporate Services', 'Professional Solutions', 'Executive Group', 'Business Team',
+                    'Corporate Team', 'Professional Hub', 'Business Solutions', 'Executive Services', 'Professional Center'
+                ],
+                'retail': [
+                    'Retail Store', 'Shopping Center', 'Department Store', 'Boutique Shop', 'Fashion Store',
+                    'Retail Hub', 'Shopping Mall', 'Store Chain', 'Retail Center', 'Shopping World',
+                    'Retail Plus', 'Store Group', 'Shopping Hub', 'Retail Solutions', 'Store Center',
+                    'Retail World', 'Shopping Center', 'Store Plus', 'Retail Group', 'Shopping Solutions'
+                ],
+                'food': [
+                    'Food Truck', 'Catering Service', 'Food Delivery', 'Bakery Shop', 'Coffee House',
+                    'Food Court', 'Catering Company', 'Food Service', 'Bakery Plus', 'Coffee Shop',
+                    'Food Center', 'Catering Hub', 'Food Solutions', 'Bakery World', 'Coffee Center',
+                    'Food Express', 'Catering Plus', 'Food Hub', 'Bakery Center', 'Coffee World'
+                ],
+                'travel': [
+                    'Travel Agency', 'Tour Company', 'Travel Center', 'Vacation Planner', 'Tour Guide Service',
+                    'Travel Hub', 'Tour Solutions', 'Travel Plus', 'Vacation Center', 'Tour World',
+                    'Travel Express', 'Tour Hub', 'Travel Solutions', 'Vacation Hub', 'Tour Center',
+                    'Travel World', 'Tour Plus', 'Travel Group', 'Vacation Solutions', 'Tour Express'
+                ],
+                'technology': [
+                    'Tech Solutions', 'Computer Repair', 'IT Services', 'Software Company', 'Tech Support',
+                    'Technology Hub', 'IT Solutions', 'Computer Services', 'Tech Center', 'IT Support',
+                    'Technology Plus', 'IT Hub', 'Tech Services', 'Computer Center', 'IT Solutions',
+                    'Technology World', 'IT Center', 'Tech Hub', 'Computer Solutions', 'IT Services'
+                ],
+                'construction': [
+                    'Construction Company', 'Building Contractors', 'Construction Services', 'General Contractors', 'Construction Group',
+                    'Building Solutions', 'Construction Hub', 'Contractor Services', 'Building Center', 'Construction Plus',
+                    'Building World', 'Construction Solutions', 'Contractor Hub', 'Building Services', 'Construction Center',
+                    'Building Group', 'Construction World', 'Contractor Solutions', 'Building Hub', 'Construction Express'
+                ],
+                'agriculture': [
+                    'Farm Supply', 'Agricultural Services', 'Farm Equipment', 'Crop Services', 'Livestock Supply',
+                    'Farm Center', 'Agricultural Hub', 'Farm Solutions', 'Crop Center', 'Livestock Services',
+                    'Farm World', 'Agricultural Plus', 'Farm Hub', 'Crop Solutions', 'Livestock Center',
+                    'Farm Express', 'Agricultural World', 'Farm Services', 'Crop Hub', 'Livestock Solutions'
+                ],
+                'manufacturing': [
+                    'Manufacturing Company', 'Production Services', 'Manufacturing Hub', 'Industrial Services', 'Production Center',
+                    'Manufacturing Solutions', 'Production Hub', 'Industrial Center', 'Manufacturing Plus', 'Production Services',
+                    'Manufacturing World', 'Production Solutions', 'Industrial Hub', 'Manufacturing Center', 'Production Plus',
+                    'Manufacturing Express', 'Production World', 'Industrial Solutions', 'Manufacturing Hub', 'Production Center'
+                ],
+                'transportation': [
+                    'Transportation Services', 'Logistics Company', 'Shipping Services', 'Delivery Company', 'Transport Hub',
+                    'Logistics Hub', 'Shipping Center', 'Delivery Services', 'Transport Solutions', 'Logistics Center',
+                    'Shipping Hub', 'Delivery Hub', 'Transport World', 'Logistics Plus', 'Shipping Solutions',
+                    'Delivery World', 'Transport Express', 'Logistics World', 'Shipping Plus', 'Delivery Solutions'
+                ],
+                'utilities': [
+                    'Utility Services', 'Power Company', 'Water Services', 'Gas Company', 'Electric Services',
+                    'Utility Hub', 'Power Solutions', 'Water Center', 'Gas Services', 'Electric Hub',
+                    'Utility World', 'Power Hub', 'Water Solutions', 'Gas Center', 'Electric Services',
+                    'Utility Plus', 'Power World', 'Water Hub', 'Gas Solutions', 'Electric Center'
+                ],
+                'legal': [
+                    'Law Firm', 'Legal Services', 'Attorney Office', 'Legal Center', 'Law Office',
+                    'Legal Hub', 'Attorney Services', 'Law Center', 'Legal Solutions', 'Attorney Hub',
+                    'Legal World', 'Law Solutions', 'Attorney Center', 'Legal Plus', 'Law Hub',
+                    'Legal Express', 'Attorney World', 'Law Services', 'Legal Center', 'Attorney Solutions'
+                ],
+                'marketing': [
+                    'Marketing Agency', 'Advertising Company', 'Marketing Services', 'PR Agency', 'Digital Marketing',
+                    'Marketing Hub', 'Advertising Hub', 'Marketing Solutions', 'PR Services', 'Digital Agency',
+                    'Marketing World', 'Advertising Solutions', 'Marketing Center', 'PR Hub', 'Digital Solutions',
+                    'Marketing Plus', 'Advertising World', 'Marketing Express', 'PR Center', 'Digital Hub'
+                ],
+                'consulting': [
+                    'Consulting Firm', 'Business Consulting', 'Management Consulting', 'Strategy Consulting', 'Consulting Services',
+                    'Consulting Hub', 'Business Solutions', 'Management Hub', 'Strategy Center', 'Consulting Plus',
+                    'Consulting World', 'Business Hub', 'Management Solutions', 'Strategy Hub', 'Consulting Center',
+                    'Consulting Express', 'Business World', 'Management Center', 'Strategy Solutions', 'Consulting Group'
+                ],
+                'security': [
+                    'Security Services', 'Security Company', 'Guard Services', 'Security Solutions', 'Protection Services',
+                    'Security Hub', 'Guard Company', 'Security Center', 'Protection Hub', 'Security Plus',
+                    'Security World', 'Guard Solutions', 'Security Express', 'Protection Center', 'Security Group',
+                    'Guard World', 'Security Services', 'Protection Solutions', 'Security Hub', 'Guard Center'
+                ],
+                'cleaning': [
+                    'Cleaning Services', 'Janitorial Services', 'House Cleaning', 'Office Cleaning', 'Commercial Cleaning',
+                    'Cleaning Hub', 'Janitorial Hub', 'Cleaning Solutions', 'House Services', 'Office Hub',
+                    'Cleaning World', 'Janitorial Solutions', 'Cleaning Center', 'House Hub', 'Office Solutions',
+                    'Cleaning Plus', 'Janitorial World', 'Cleaning Express', 'House Solutions', 'Office Center'
+                ],
+                'maintenance': [
+                    'Maintenance Services', 'Facility Maintenance', 'Equipment Maintenance', 'Property Maintenance', 'Maintenance Company',
+                    'Maintenance Hub', 'Facility Services', 'Equipment Hub', 'Property Services', 'Maintenance Solutions',
+                    'Maintenance World', 'Facility Hub', 'Equipment Solutions', 'Property Hub', 'Maintenance Center',
+                    'Maintenance Plus', 'Facility World', 'Equipment Center', 'Property Solutions', 'Maintenance Express'
+                ],
+                'repair': [
+                    'Repair Services', 'Appliance Repair', 'Electronics Repair', 'Furniture Repair', 'Repair Company',
+                    'Repair Hub', 'Appliance Services', 'Electronics Hub', 'Furniture Services', 'Repair Solutions',
+                    'Repair World', 'Appliance Hub', 'Electronics Solutions', 'Furniture Hub', 'Repair Center',
+                    'Repair Plus', 'Appliance World', 'Electronics Center', 'Furniture Solutions', 'Repair Express'
+                ],
+                'installation': [
+                    'Installation Services', 'Equipment Installation', 'System Installation', 'Appliance Installation', 'Installation Company',
+                    'Installation Hub', 'Equipment Services', 'System Hub', 'Appliance Services', 'Installation Solutions',
+                    'Installation World', 'Equipment Hub', 'System Solutions', 'Appliance Hub', 'Installation Center',
+                    'Installation Plus', 'Equipment World', 'System Center', 'Appliance Solutions', 'Installation Express'
+                ]
+            };
+            
+            // Handle custom business types
+            let names;
+            if (businessNames[term]) {
+                names = businessNames[term];
+            } else {
+                // Generate names for custom business types
+                names = generateCustomBusinessNames(term);
+            }
+            
+            const businesses = [];
+            const city = location.split(',')[0] || 'Houston';
+            const state = location.split(',')[1]?.trim() || 'TX';
+            
+            // Generate realistic street names
+            const streetNames = [
+                'Main St', 'Oak Ave', 'Pine St', 'Elm St', 'Cedar Ave', 'Maple St', 'First St', 'Second St',
+                'Park Ave', 'Broadway', 'Washington St', 'Lincoln Ave', 'Jefferson St', 'Madison Ave',
+                'Roosevelt St', 'Kennedy Ave', 'Wilson St', 'Johnson Ave', 'Brown St', 'Davis Ave'
+            ];
+            
+            // Generate more businesses based on radius (more radius = more businesses)
+            const baseCount = Math.floor(radius / 1000); // 1 business per km
+            const randomCount = Math.floor(Math.random() * 10) + 5; // 5-15 additional
+            const totalCount = Math.min(baseCount + randomCount, 50); // Max 50 businesses
+            
+            for (let i = 0; i < totalCount; i++) {
+                const businessName = names[Math.floor(Math.random() * names.length)];
+                const streetName = streetNames[Math.floor(Math.random() * streetNames.length)];
+                const streetNumber = Math.floor(Math.random() * 9999) + 100;
+                const hasWebsite = Math.random() > 0.3;
+                const rating = (Math.random() * 2 + 3).toFixed(1);
+                const reviewCount = Math.floor(Math.random() * 200) + 10;
+                
+                businesses.push({
+                    id: 'business_' + Date.now() + '_' + i,
+                    name: businessName,
+                    category: term.charAt(0).toUpperCase() + term.slice(1).replace(/([A-Z])/g, ' $1').trim(),
+                    address: `${streetNumber} ${streetName}`,
+                    city: city,
+                    state: state,
+                    phone: `(${Math.floor(Math.random() * 900) + 100}) ${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}`,
+                    website: hasWebsite ? `https://www.${businessName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com` : null,
+                    hasWebsite: hasWebsite,
+                    rating: parseFloat(rating),
+                    reviewCount: reviewCount,
+                    price: '$'.repeat(Math.floor(Math.random() * 4) + 1),
+                    isClosed: Math.random() > 0.95,
+                    distance: Math.random() * (radius / 1000), // Distance in km within the radius
+                    imageUrl: `https://picsum.photos/200/200?random=${Date.now() + i}`,
+                    yelpUrl: `https://yelp.com/biz/${businessName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+                    coordinates: {
+                        latitude: currentLocation[0] + (Math.random() - 0.5) * 0.01,
+                        longitude: currentLocation[1] + (Math.random() - 0.5) * 0.01
+                    }
+                });
+            }
+            
+            return businesses;
+        }
+
+        // Generate custom business names for any business type
+        function generateCustomBusinessNames(term) {
+            const prefixes = [
+                'Elite', 'Premium', 'Professional', 'Advanced', 'Superior', 'Quality', 'Expert', 'Master',
+                'Pro', 'Top', 'Best', 'Prime', 'First', 'Leading', 'Specialized', 'Custom', 'Unique',
+                'Modern', 'Classic', 'Traditional', 'Innovative', 'Creative', 'Dynamic', 'Reliable'
+            ];
+            
+            const suffixes = [
+                'Services', 'Solutions', 'Center', 'Group', 'Company', 'Associates', 'Partners', 'Team',
+                'Works', 'Studio', 'Shop', 'Store', 'Place', 'House', 'Hub', 'Zone', 'World', 'Plus',
+                'Pro', 'Expert', 'Specialists', 'Masters', 'Leaders', 'Champions', 'Elite', 'Premium'
+            ];
+            
+            const names = [];
+            const termCapitalized = term.charAt(0).toUpperCase() + term.slice(1);
+            
+            // Generate 15-20 custom names
+            for (let i = 0; i < 20; i++) {
+                const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+                const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+                
+                // Create different name patterns
+                const patterns = [
+                    `${prefix} ${termCapitalized}`,
+                    `${termCapitalized} ${suffix}`,
+                    `${prefix} ${termCapitalized} ${suffix}`,
+                    `${termCapitalized} ${prefix}`,
+                    `${termCapitalized} & ${termCapitalized}`,
+                    `${termCapitalized} ${suffix} ${prefix}`,
+                    `${prefix} ${termCapitalized} Services`,
+                    `${termCapitalized} ${prefix} Center`
+                ];
+                
+                const name = patterns[Math.floor(Math.random() * patterns.length)];
+                if (!names.includes(name)) {
+                    names.push(name);
+                }
+            }
+            
+            return names;
+        }
+
+        // Display results
+        function displayResults(businesses, options = {}) {
+            const container = document.getElementById('resultsContainer');
+            const resultsSection = document.getElementById('resultsSection');
+            
+            if (!container || !resultsSection) {
+                console.error('Required DOM elements not found');
+                return;
+            }
+            
+            if (!businesses || !Array.isArray(businesses)) {
+                console.error('Invalid businesses data:', businesses);
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            if (options.notice) {
+                const notice = document.createElement('div');
+                notice.style.cssText = `
+                    background: rgba(245, 158, 11, 0.1);
+                    border: 1px solid rgba(245, 158, 11, 0.4);
+                    border-radius: 10px;
+                    padding: 12px 15px;
+                    margin-bottom: 15px;
+                    text-align: center;
+                    font-weight: 600;
+                    color: #f59e0b;
+                `;
+                notice.textContent = options.notice;
+                container.appendChild(notice);
+            }
+
+            // Add results count header
+            const countHeader = document.createElement('div');
+            countHeader.style.cssText = `
+                background: rgba(102, 126, 234, 0.1);
+                border: 1px solid rgba(102, 126, 234, 0.3);
+                border-radius: 10px;
+                padding: 15px;
+                margin-bottom: 20px;
+                text-align: center;
+                font-weight: 600;
+                color: #667eea;
+            `;
+            countHeader.innerHTML = `🎯 Se encontraron <strong>${businesses.length}</strong> negocios en el área seleccionada`;
+            container.appendChild(countHeader);
+            
+            businesses.forEach(business => {
+                const card = document.createElement('div');
+                card.className = 'business-card';
+                card.innerHTML = `
+                    <div class="business-header">
+                        <div>
+                            <div class="business-name">${business.name}</div>
+                            <div class="business-category">${business.category}</div>
+                        </div>
+                        <div class="business-rating">
+                            ⭐ ${business.rating} (${business.reviewCount})
+                        </div>
+                    </div>
+                    <div class="business-details">
+                        <div class="business-detail">
+                            📍 ${business.address}, ${business.city}, ${business.state}
+                        </div>
+                        <div class="business-detail">
+                            📞 ${business.phone}
+                        </div>
+                        <div class="business-detail">
+                            🌐 ${business.hasWebsite ? 'Tiene sitio web' : 'Sin sitio web'}
+                        </div>
+                        <div class="business-detail">
+                            💰 ${business.price} • 📏 ${(typeof business.distance === 'number' ? business.distance.toFixed(1) : business.distance)}km
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            
+            resultsSection.style.display = 'block';
+        }
+
+        // Update stats
+        function updateStats() {
+            if (!savedBusinesses || !Array.isArray(savedBusinesses)) {
+                console.error('Invalid savedBusinesses data');
+                return;
+            }
+            
+            const total = savedBusinesses.length;
+            const withWebsite = savedBusinesses.filter(b => b && b.hasWebsite).length;
+            const withoutWebsite = total - withWebsite;
+            const avgRating = total > 0 ? (savedBusinesses.reduce((sum, b) => sum + (b && b.rating ? b.rating : 0), 0) / total).toFixed(1) : 0;
+            
+            const totalElement = document.getElementById('totalBusinesses');
+            const withWebsiteElement = document.getElementById('withWebsite');
+            const withoutWebsiteElement = document.getElementById('withoutWebsite');
+            const avgRatingElement = document.getElementById('avgRating');
+            
+            if (totalElement) totalElement.textContent = total;
+            if (withWebsiteElement) withWebsiteElement.textContent = withWebsite;
+            if (withoutWebsiteElement) withoutWebsiteElement.textContent = withoutWebsite;
+            if (avgRatingElement) avgRatingElement.textContent = avgRating;
+        }
+
+        // Export to CSV for EspoCRM
+        function exportToCSV() {
+            if (!savedBusinesses || !Array.isArray(savedBusinesses) || savedBusinesses.length === 0) {
+                alert('No hay datos para exportar');
+                return;
+            }
+            
+            // Headers for EspoCRM (exact field names)
+            const headers = [
+                'name', 'phoneNumber', 'addressStreet', 'addressCity', 'website'
+            ];
+            
+            // Map data to EspoCRM format with proper cleaning
+            const rows = savedBusinesses.map(b => {
+                // Clean phone number (remove spaces, dashes, parentheses)
+                const cleanPhone = (b.phone || '').replace(/[^\d]/g, '');
+                const formattedPhone = cleanPhone ? `+1${cleanPhone}` : '';
+                
+                // Clean address
+                const cleanAddress = (b.address || '').trim();
+                
+                // Clean city
+                const cleanCity = (b.city || '').trim();
+                
+                // Clean website (ensure it has protocol)
+                let cleanWebsite = (b.website || '').trim();
+                if (cleanWebsite && !cleanWebsite.startsWith('http')) {
+                    cleanWebsite = 'https://' + cleanWebsite;
+                }
+                
+                return [
+                    (b.name || '').trim(),
+                    formattedPhone,
+                    cleanAddress,
+                    cleanCity,
+                    cleanWebsite
+                ];
+            });
+            
+            // Create CSV with proper escaping
+            const csvContent = [headers, ...rows]
+                .map(row => row.map(field => {
+                    // Escape quotes and wrap in quotes
+                    const escaped = String(field).replace(/"/g, '""');
+                    return `"${escaped}"`;
+                }).join(','))
+                .join('\r\n'); // Use Windows line endings for better compatibility
+            
+            // Create BOM for UTF-8 to ensure proper encoding
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `espo_crm_leads_${new Date().toISOString().slice(0,10)}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Load saved businesses from localStorage
+        function loadSavedBusinesses() {
+            try {
+                const saved = localStorage.getItem('savedBusinesses');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed)) {
+                        savedBusinesses = parsed;
+                        updateStats();
+                    } else {
+                        console.error('Invalid saved data format');
+                        savedBusinesses = [];
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading saved businesses:', error);
+                savedBusinesses = [];
+            }
+        }
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then((registration) => {
+                        console.log('Service Worker registered successfully:', registration);
+
+                        // Force update if there's a waiting service worker
+                        if (registration.waiting) {
+                            registration.waiting.postMessage({ action: 'skipWaiting' });
+                        }
+
+                        // Listen for updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            if (newWorker) {
+                                newWorker.addEventListener('statechange', () => {
+                                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                        // New service worker available, reload page
+                                        console.log('New service worker available, reloading...');
+                                        window.location.reload();
+                                    }
+                                });
+                            }
+                        });
+                    })
+                    .catch((error) => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+
+        // Initialize everything
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                initMap();
+                loadSavedBusinesses();
+
+                const locationInput = document.getElementById('location');
+                const radiusInput = document.getElementById('radius');
+                const radiusValue = document.getElementById('radiusValue');
+                if (locationInput) {
+                    locationInput.value = APP_CONFIG.DEFAULT_LOCATION || locationInput.value;
+                    geocodeLocation(locationInput.value);
+                }
+                if (radiusInput && radiusValue) {
+                    radiusInput.value = APP_CONFIG.DEFAULT_RADIUS || radiusInput.value;
+                    radiusValue.textContent = `${radiusInput.value}m`;
+                    updateSearchCircle();
+                }
+                
+                // Show PWA install prompt
+                let deferredPrompt;
+                window.addEventListener('beforeinstallprompt', (e) => {
+                    e.preventDefault();
+                    deferredPrompt = e;
+                    
+                    // Show install button
+                    const installBtn = document.createElement('button');
+                    installBtn.textContent = '📱 Instalar App';
+                    installBtn.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 25px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        z-index: 1000;
+                        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+                    `;
+                    
+                    installBtn.addEventListener('click', () => {
+                        deferredPrompt.prompt();
+                        deferredPrompt.userChoice.then((choiceResult) => {
+                            if (choiceResult.outcome === 'accepted') {
+                                console.log('User accepted the install prompt');
+                            }
+                            deferredPrompt = null;
+                            installBtn.remove();
+                        });
+                    });
+                    
+                    document.body.appendChild(installBtn);
+                });
+                
+            } catch (error) {
+                console.error('Error initializing application:', error);
+                alert('Error al inicializar la aplicación. Por favor recarga la página.');
+            }
+        });
+    </script>
+</body>
+</html>
