@@ -185,7 +185,7 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 overpass_data = json.loads(response.read().decode('utf-8'))
 
             businesses = []
-            elements = overpass_data.get('elements', [])[:50]  # Limitar a 50 resultados
+            elements = overpass_data.get('elements', [])
 
             for element in elements:
                 # Calcular distancia
@@ -228,9 +228,9 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                         'openingHours': tags.get('opening_hours', '')
                     })
 
-            # Ordenar por distancia
+            # Ordenar por distancia y limitar a 50 resultados
             businesses.sort(key=lambda x: x['distance'])
-            return businesses
+            return businesses[:50]
 
         except Exception as e:
             print(f"Error searching Overpass: {e}")
