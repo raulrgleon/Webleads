@@ -1,5 +1,5 @@
 // Service Worker para Webleads PWA
-const CACHE_NAME = 'webleads-v9';
+const CACHE_NAME = 'webleads-v10';
 const API_CACHE_NAME = 'webleads-api-v1';
 
 // Archivos para cache
