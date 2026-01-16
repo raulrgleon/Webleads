@@ -1,5 +1,7 @@
 # 🚀 Webleads PWA - Motor de Búsqueda Inteligente
 
+[![GitHub](https://img.shields.io/badge/GitHub-raulrgleon/Webleads-blue?logo=github)](https://github.com/raulrgleon/Webleads)
+
 ## 📋 Descripción
 Aplicación web progresiva (PWA) para buscar negocios locales usando **exclusivamente datos reales de la API de Yelp**. Incluye mapa interactivo, exportación a CSV para EspoCRM y funcionalidad offline.
 
@@ -13,7 +15,13 @@ Aplicación web progresiva (PWA) para buscar negocios locales usando **exclusiva
 
 ## 🚀 Instalación y Uso
 
-### 0. Configurar API Key de Yelp (obligatorio)
+### 0. Clonar desde GitHub
+```bash
+git clone https://github.com/raulrgleon/Webleads.git
+cd Webleads
+```
+
+### 0.1 Configurar API Key de Yelp (obligatorio)
 ```bash
 export YELP_API_KEY="TU_API_KEY"
 ```
