@@ -1,0 +1,21 @@
+services:
+  app:
+    build: .
+    image: dnet-webleads:current
+    restart: unless-stopped
+    env_file: /data/webleads/runtime.env
+    volumes: ['/data/webleads/storage:/data']
+    ports: ['127.0.0.1:3210:3210']
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 80
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=32m']
+    healthcheck:
+      test: [CMD, python, -c, 'import urllib.request; urllib.request.urlopen("http://127.0.0.1:3210/health",timeout=3)']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging: {driver: json-file, options: {max-size: 10m, max-file: '3'}}

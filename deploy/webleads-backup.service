@@ -1,0 +1,6 @@
+[Unit]
+Description=Respaldo cifrado de WebLeads
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /home/raul/webleads/scripts/backup.py
+UMask=0077

@@ -1,0 +1,1 @@
+{"name": "WebLeads \u00b7 DNET", "short_name": "WebLeads", "start_url": "/", "display": "standalone", "background_color": "#f4f7fa", "theme_color": "#2563A6", "icons": [{"src": "/static/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"}, {"src": "/static/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}]}
